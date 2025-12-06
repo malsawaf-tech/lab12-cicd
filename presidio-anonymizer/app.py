@@ -44,6 +44,15 @@ class Server:
         def health() -> str:
             """Return basic health probe result."""
             return "Presidio Anonymizer service is up"
+        
+        @self.app.route("/genz-preview")
+        def genz_preview():
+            """Return example output of the genz anonymizer."""
+            return jsonify({
+                "example": "Call Emily at 577-988-1234",
+                "example_output": "Call GOAT at vibe check",
+                "description": "Example output of the genz anonymizer."
+            }) 
 
         @self.app.route("/anonymize", methods=["POST"])
         def anonymize() -> Response:
