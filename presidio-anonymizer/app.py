@@ -1,5 +1,6 @@
 """REST API server for anonymizer."""
 
+import json
 import logging
 import os
 from logging.config import fileConfig
@@ -52,7 +53,39 @@ class Server:
                 "example": "Call Emily at 577-988-1234",
                 "example_output": "Call GOAT at vibe check",
                 "description": "Example output of the genz anonymizer."
-            }) 
+            })
+
+        @self.app.route("/genz", methods=["POST"])
+        def genz() -> Response:
+            """Anonymize text using Genz lang operator."""
+            content = request.get_json()
+            if not content:
+                raise BadRequest("Invalid request json")
+            
+            text = content.get("text", "")
+            analyzer_results_data = content.get("analyzer_results", [])
+            
+            analyzer_results = AppEntitiesConvertor.analyzer_results_from_json(
+                analyzer_results_data
+            )
+            
+            anonymizers_config_dict = {
+                "DEFAULT": {"type": "genz"}
+            }
+            for result in analyzer_results:
+                anonymizers_config_dict[result.entity_type] = {"type": "genz", "entity_type": result.entity_type}
+            
+            anonymizers_config = AppEntitiesConvertor.operators_config_from_json(
+                anonymizers_config_dict
+            )
+
+            genz_result = self.anonymizer.anonymize(
+                text=text,
+                analyzer_results=analyzer_results,
+                operators=anonymizers_config,
+            )
+            
+            return Response(genz_result.to_json(), mimetype="application/json")
 
         @self.app.route("/anonymize", methods=["POST"])
         def anonymize() -> Response:
