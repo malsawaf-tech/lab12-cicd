@@ -1,6 +1,5 @@
 """REST API server for anonymizer."""
 
-import json
 import logging
 import os
 from logging.config import fileConfig
@@ -45,7 +44,7 @@ class Server:
         def health() -> str:
             """Return basic health probe result."""
             return "Presidio Anonymizer service is up"
-        
+
         @self.app.route("/genz-preview")
         def genz_preview():
             """Return example output of the genz anonymizer."""
@@ -61,22 +60,25 @@ class Server:
             content = request.get_json()
             if not content:
                 raise BadRequest("Invalid request json")
-            
+
             text = content.get("text", "")
             analyzer_results_data = content.get("analyzer_results", [])
-            
+
             analyzer_results = AppEntitiesConvertor.analyzer_results_from_json(
                 analyzer_results_data
             )
-            
-            anonymizers_config_dict = {
-                "DEFAULT": {"type": "genz"}
-            }
+
+            anonymizers_config_dict = {"DEFAULT": {"type": "genz"}}
             for result in analyzer_results:
-                anonymizers_config_dict[result.entity_type] = {"type": "genz", "entity_type": result.entity_type}
-            
-            anonymizers_config = AppEntitiesConvertor.operators_config_from_json(
-                anonymizers_config_dict
+                anonymizers_config_dict[result.entity_type] = {
+                    "type": "genz",
+                    "entity_type": result.entity_type,
+                }
+
+            anonymizers_config = (
+                AppEntitiesConvertor.operators_config_from_json(
+                    anonymizers_config_dict
+                )
             )
 
             genz_result = self.anonymizer.anonymize(
@@ -84,7 +86,7 @@ class Server:
                 analyzer_results=analyzer_results,
                 operators=anonymizers_config,
             )
-            
+
             return Response(genz_result.to_json(), mimetype="application/json")
 
         @self.app.route("/anonymize", methods=["POST"])
